@@ -1,23 +1,5 @@
 (function () {
 
-  /* ── API instance lists ─────────────────────────────────────────── */
-  const PIPED_HOSTS = [
-    'https://pipedapi.kavin.rocks',
-    'https://pipedapi.moomoo.me',
-    'https://pipedapi.adminforge.de',
-    'https://piped-api.garudalinux.org',
-    'https://api.piped.projectsegfau.lt',
-  ];
-
-  const INVIDIOUS_HOSTS = [
-    'https://inv.nadeko.net',
-    'https://invidious.privacyredirect.com',
-    'https://yt.cdaut.de',
-    'https://invidious.nerdvpn.de',
-    'https://iv.melmac.space',
-  ];
-
-  /* ── DOM refs ───────────────────────────────────────────────────── */
   const input  = document.getElementById('url-input');
   const paste  = document.getElementById('paste-btn');
   const dlBtn  = document.getElementById('download-btn');
@@ -27,7 +9,7 @@
   let selQ     = 'max';
   let selAudio = false;
 
-  /* ── quality chips ──────────────────────────────────────────────── */
+  /* ── quality chips ── */
   qGrid.addEventListener('click', e => {
     const btn = e.target.closest('.q-btn');
     if (!btn) return;
@@ -37,26 +19,26 @@
     selAudio = btn.dataset.audio === 'true';
   });
 
-  /* ── paste button ───────────────────────────────────────────────── */
+  /* ── paste ── */
   paste.addEventListener('click', async () => {
     try {
       input.value = (await navigator.clipboard.readText()).trim();
       clearStatus();
     } catch {
-      showStatus('Clipboard denied — long-press the input box and choose Paste.', 'err');
+      showStatus('Long-press the input box and tap Paste.', 'err');
     }
   });
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') dlBtn.click(); });
 
-  /* ── main download flow ─────────────────────────────────────────── */
+  /* ── download ── */
   dlBtn.addEventListener('click', async () => {
     const url = input.value.trim();
     if (!url) { showStatus('Paste a YouTube link first.', 'err'); return; }
 
     const videoId = extractId(url);
     if (!videoId) {
-      showStatus('Not a YouTube link — copy the URL directly from the YouTube app.', 'err');
+      showStatus('Not a valid YouTube link — copy it directly from the YouTube app.', 'err');
       return;
     }
 
@@ -64,137 +46,96 @@
     showStatus('<span class="spin"></span>Fetching video…', 'info');
 
     try {
-      const result = await fetchWithFallback(videoId);
-      const streamUrl = selectStream(result, selQ, selAudio);
+      const formats = await fetchFormats(url);
+      const pick    = selectFormat(formats, selQ, selAudio);
 
-      if (!streamUrl) throw new Error('No stream found. Try a lower quality or "Audio".');
+      if (!pick?.url) throw new Error('No stream found. Try a lower quality or Audio.');
 
-      /* open URL — browser handles the download */
-      const a = document.createElement('a');
-      a.href   = streamUrl;
-      a.target = '_blank';
-      a.rel    = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      showStatus('✓ Download started! On iPhone: if a player opens, tap ↑ Share → Save to Files.', 'ok');
+      openDownload(pick.url);
+      showStatus(
+        '✓ Download started!<br><small>On iPhone: if a video plays, tap <b>↑ Share → Save to Files</b> to keep it.</small>',
+        'ok'
+      );
     } catch (e) {
-      showStatus('⚠ ' + e.message, 'err');
+      showDeployMsg(e.message);
     } finally {
       dlBtn.disabled = false;
     }
   });
 
-  /* ── fetch with Piped → Invidious fallback ──────────────────────── */
-  async function fetchWithFallback(videoId) {
-    /* 1. Try Piped instances */
-    for (const host of PIPED_HOSTS) {
-      try {
-        const res = await timedFetch(`${host}/streams/${videoId}`, 9000);
-        if (!res.ok) continue;
-        const d = await res.json();
-        if (d.error) { handleVideoError(d.error); }
-        if (d.videoStreams?.length) return { api: 'piped', d };
-      } catch (e) {
-        if (e.isFatal) throw e;
+  /* ── fetch: try local /api/info first (works on Vercel), else show error ── */
+  async function fetchFormats(youtubeUrl) {
+    try {
+      const res = await timedFetch('/api/info', 20000, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: youtubeUrl }),
+      });
+      if (res.status === 404) throw new Error('NO_BACKEND');
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Server error');
       }
-    }
-
-    /* 2. Try Invidious instances */
-    for (const host of INVIDIOUS_HOSTS) {
-      try {
-        const res = await timedFetch(
-          `${host}/api/v1/videos/${videoId}?fields=title,formatStreams,adaptiveFormats`,
-          9000
-        );
-        if (!res.ok) continue;
-        const d = await res.json();
-        if (d.error) handleVideoError(d.error);
-        if (d.formatStreams?.length || d.adaptiveFormats?.length) return { api: 'invidious', d };
-      } catch (e) {
-        if (e.isFatal) throw e;
+      const d = await res.json();
+      if (d.error) throw new Error(d.error);
+      return d.formats || [];
+    } catch (e) {
+      if (e.message === 'NO_BACKEND' || e.name === 'TypeError') {
+        throw new Error('NO_BACKEND');
       }
+      throw e;
     }
-
-    throw new Error('Download service unavailable right now. Please try again in a minute.');
   }
 
-  /* ── stream selection ───────────────────────────────────────────── */
-  function selectStream(result, qualityLabel, isAudio) {
-    const { api, d } = result;
-
-    if (api === 'piped') {
-      if (isAudio) {
-        const s = (d.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-        return s[0]?.url || null;
-      }
-      const progressive = (d.videoStreams || [])
-        .filter(s => !s.videoOnly)
-        .map(s => ({ url: s.url, h: parseInt(s.quality) || 0 }))
-        .sort((a, b) => b.h - a.h);
-      const pool = progressive.length
-        ? progressive
-        : (d.videoStreams || []).map(s => ({ url: s.url, h: parseInt(s.quality) || 0 })).sort((a, b) => b.h - a.h);
-      return pickQuality(pool, qualityLabel);
+  /* ── select the best format matching chosen quality ── */
+  function selectFormat(formats, qualityLabel, isAudio) {
+    if (isAudio) {
+      return formats.find(f => f.audio_only) || null;
     }
-
-    if (api === 'invidious') {
-      if (isAudio) {
-        const audio = (d.adaptiveFormats || [])
-          .filter(s => s.type?.startsWith('audio'))
-          .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-        return audio[0]?.url || null;
-      }
-      /* formatStreams = progressive MP4 (video + audio combined) */
-      const pool = (d.formatStreams || [])
-        .filter(s => s.container === 'mp4')
-        .map(s => ({ url: s.url, h: parseInt(s.qualityLabel) || 0 }))
-        .sort((a, b) => b.h - a.h);
-      if (!pool.length) {
-        /* fall back to adaptive video */
-        const adaptive = (d.adaptiveFormats || [])
-          .filter(s => s.type?.startsWith('video'))
-          .map(s => ({ url: s.url, h: parseInt(s.qualityLabel) || 0 }))
-          .sort((a, b) => b.h - a.h);
-        return pickQuality(adaptive, qualityLabel);
-      }
-      return pickQuality(pool, qualityLabel);
-    }
-
-    return null;
-  }
-
-  function pickQuality(pool, qualityLabel) {
-    if (!pool.length) return null;
-    if (qualityLabel === 'max') return pool[0].url;
+    const videos = formats.filter(f => !f.audio_only).sort((a, b) => b.height - a.height);
+    if (!videos.length) return null;
+    if (qualityLabel === 'max') return videos[0];
     const target = parseInt(qualityLabel);
-    return (pool.find(s => s.h <= target) || pool[pool.length - 1]).url;
+    return videos.find(v => v.height <= target) || videos[videos.length - 1];
   }
 
-  /* ── utilities ──────────────────────────────────────────────────── */
-  function timedFetch(url, ms) {
-    return new Promise((resolve, reject) => {
-      const ctrl = new AbortController();
-      const id   = setTimeout(() => ctrl.abort(), ms);
-      fetch(url, { signal: ctrl.signal })
-        .then(r => { clearTimeout(id); resolve(r); })
-        .catch(e => { clearTimeout(id); reject(e); });
+  /* ── open URL as download ── */
+  function openDownload(url) {
+    const a = Object.assign(document.createElement('a'), {
+      href: url, target: '_blank', rel: 'noopener noreferrer',
     });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
-  function handleVideoError(msg) {
-    const m = (msg || '').toLowerCase();
-    const err = new Error(
-      m.includes('private')      ? 'This video is private.' :
-      m.includes('unavailable')  ? 'This video is unavailable or deleted.' :
-      m.includes('age')          ? 'This video is age-restricted.' :
-      'Could not load this video. It may be unavailable in your region.'
-    );
-    err.isFatal = true;
-    throw err;
+  /* ── show "deploy backend" instructions ── */
+  function showDeployMsg(msg) {
+    if (msg === 'NO_BACKEND') {
+      status.innerHTML = `
+        <b>Backend not connected.</b><br>
+        This site needs a backend server to download videos.
+        Deploy it free in ~3 minutes:<br><br>
+        <a href="https://vercel.com/new/clone?repository-url=https://github.com/1tommyguy/YouTube-link-download&branch=claude/youtube-video-downloader-j7Gw5"
+           target="_blank" rel="noopener"
+           style="display:inline-block;background:#000;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:700;margin:4px 4px 4px 0">
+          ▲ Deploy to Vercel (free)
+        </a>
+        <a href="https://render.com/deploy?repo=https://github.com/1tommyguy/YouTube-link-download"
+           target="_blank" rel="noopener"
+           style="display:inline-block;background:#46e3b7;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:700;margin:4px">
+          ⬡ Deploy to Render (free)
+        </a>
+        <br><small style="color:#888;margin-top:8px;display:block">
+          After deploying, use the URL they give you — it's your working downloader.
+        </small>`;
+      status.className = 'status err';
+    } else {
+      showStatus('⚠ ' + msg, 'err');
+    }
   }
 
+  /* ── utils ── */
   function extractId(url) {
     const pats = [
       /[?&]v=([a-zA-Z0-9_-]{11})/,
@@ -205,6 +146,16 @@
     ];
     for (const p of pats) { const m = url.match(p); if (m) return m[1]; }
     return null;
+  }
+
+  function timedFetch(url, ms, opts) {
+    return new Promise((resolve, reject) => {
+      const ctrl = new AbortController();
+      const id   = setTimeout(() => ctrl.abort(), ms);
+      fetch(url, { ...opts, signal: ctrl.signal })
+        .then(r => { clearTimeout(id); resolve(r); })
+        .catch(e => { clearTimeout(id); reject(e); });
+    });
   }
 
   function showStatus(html, type) {
