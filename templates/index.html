@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT Downloader</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#FF0000"/>
+          <path d="M10 8l6 4-6 4V8z" fill="white"/>
+        </svg>
+        <span>YT<strong>Download</strong></span>
+      </div>
+      <p class="tagline">Paste any YouTube link — short or long — and download the video to your device.</p>
+    </header>
+
+    <main>
+      <div class="input-card">
+        <div class="input-row">
+          <input
+            type="url"
+            id="url-input"
+            placeholder="Paste YouTube link here…"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button id="paste-btn" class="btn-icon" title="Paste from clipboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+          <button id="fetch-btn" class="btn-primary">Get Video</button>
+        </div>
+        <div id="error-msg" class="error hidden"></div>
+      </div>
+
+      <div id="loader" class="loader hidden">
+        <div class="spinner"></div>
+        <span>Fetching video info…</span>
+      </div>
+
+      <div id="result-card" class="result-card hidden">
+        <div class="video-meta">
+          <img id="thumbnail" src="" alt="thumbnail" />
+          <div class="meta-text">
+            <h2 id="video-title"></h2>
+            <p id="video-duration" class="duration"></p>
+          </div>
+        </div>
+
+        <div class="quality-section">
+          <p class="section-label">Choose quality</p>
+          <div id="format-list" class="format-list"></div>
+        </div>
+
+        <button id="download-btn" class="btn-download" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+          </svg>
+          Download
+        </button>
+        <p id="download-status" class="download-status hidden"></p>
+      </div>
+    </main>
+
+    <footer>
+      <p>For personal use only. Respect copyright and YouTube's Terms of Service.</p>
+    </footer>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
