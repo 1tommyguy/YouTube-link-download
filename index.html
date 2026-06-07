@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT Downloader</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#FF0000"/>
+          <path d="M10 8l6 4-6 4V8z" fill="white"/>
+        </svg>
+        <span>YT<strong>Download</strong></span>
+      </div>
+      <p class="tagline">Paste any YouTube link and download the video straight to your device.</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div class="input-row">
+          <input
+            type="url"
+            id="url-input"
+            placeholder="Paste YouTube link here…"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button id="paste-btn" class="btn-icon" title="Paste from clipboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="section-label">Choose quality</div>
+        <div class="quality-grid" id="quality-grid">
+          <button class="q-btn selected" data-q="max"     data-audio="false">Best</button>
+          <button class="q-btn"          data-q="1080"    data-audio="false">1080p</button>
+          <button class="q-btn"          data-q="720"     data-audio="false">720p</button>
+          <button class="q-btn"          data-q="480"     data-audio="false">480p</button>
+          <button class="q-btn"          data-q="360"     data-audio="false">360p</button>
+          <button class="q-btn audio"    data-q="128"     data-audio="true">🎵 MP3</button>
+        </div>
+
+        <button id="download-btn" class="btn-download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+            <path d="M12 3v13M5 11l7 7 7-7"/>
+            <path d="M3 21h18"/>
+          </svg>
+          Download
+        </button>
+
+        <div id="status" class="status hidden"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p>For personal use only &middot; Respect YouTube's Terms of Service</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

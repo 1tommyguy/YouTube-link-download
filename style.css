@@ -1,0 +1,186 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red: #ff0000;
+  --red-d: #cc0000;
+  --bg: #0f0f0f;
+  --s1: #1a1a1a;
+  --s2: #242424;
+  --bd: #333;
+  --tx: #f1f1f1;
+  --mu: #999;
+  --gr: #00c853;
+  --r: 14px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 16px 60px;
+}
+
+.container {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Header ── */
+header { text-align: center; }
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.logo svg { width: 42px; height: 42px; }
+.logo span { font-size: 1.9rem; font-weight: 400; letter-spacing: -0.5px; }
+.logo strong { font-weight: 800; }
+
+.tagline { color: var(--mu); font-size: 0.92rem; line-height: 1.55; }
+
+/* ── Card ── */
+.card {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Input ── */
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+#url-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--s2);
+  border: 1.5px solid var(--bd);
+  border-radius: 10px;
+  color: var(--tx);
+  font-size: 0.95rem;
+  padding: 13px 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+#url-input::placeholder { color: var(--mu); }
+#url-input:focus { border-color: var(--red); }
+
+.btn-icon {
+  background: var(--s2);
+  border: 1.5px solid var(--bd);
+  border-radius: 10px;
+  color: var(--mu);
+  cursor: pointer;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .2s, border-color .2s;
+  flex-shrink: 0;
+}
+.btn-icon svg { width: 19px; height: 19px; }
+.btn-icon:hover { color: var(--tx); border-color: var(--tx); }
+
+/* ── Quality ── */
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--mu);
+}
+
+.quality-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.q-btn {
+  background: var(--s2);
+  border: 2px solid var(--bd);
+  border-radius: 22px;
+  color: var(--tx);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 7px 18px;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.q-btn:hover { border-color: var(--red); }
+.q-btn.selected { border-color: var(--red); background: rgba(255,0,0,.14); color: #ff5555; }
+.q-btn.audio.selected { border-color: #a259ff; background: rgba(162,89,255,.14); color: #c084fc; }
+
+/* ── Download button ── */
+.btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  background: var(--gr);
+  border: none;
+  border-radius: 12px;
+  color: #000;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 16px;
+  letter-spacing: .01em;
+  transition: opacity .2s, transform .1s;
+}
+.btn-download svg { width: 22px; height: 22px; }
+.btn-download:hover { opacity: .88; }
+.btn-download:active { transform: scale(.97); }
+.btn-download:disabled { background: #444; color: #777; cursor: not-allowed; }
+
+/* ── Status ── */
+.status {
+  border-radius: 8px;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+.status.info  { background: rgba(255,255,255,.06); color: var(--mu); }
+.status.ok    { background: rgba(0,200,83,.12);    color: #4ade80; }
+.status.err   { background: rgba(255,80,80,.12);   color: #ff6b6b; border-left: 3px solid #ff6b6b; text-align: left; }
+
+/* ── Footer ── */
+footer { text-align: center; color: var(--mu); font-size: .76rem; }
+
+/* ── Spinner ── */
+.spin {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+
+/* ── Mobile ── */
+@media (max-width: 400px) {
+  .q-btn { padding: 6px 13px; font-size: .82rem; }
+}
