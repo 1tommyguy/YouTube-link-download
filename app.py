@@ -31,6 +31,7 @@ def video_info():
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        "extractor_args": {"youtube": {"player_client": ["android"]}},
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -80,6 +81,7 @@ def download_video():
             "quiet": True,
             "no_warnings": True,
             "outtmpl": out_template,
+            "extractor_args": {"youtube": {"player_client": ["android"]}},
         }
 
         if is_audio:

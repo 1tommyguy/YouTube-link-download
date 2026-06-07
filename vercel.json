@@ -1,7 +1,10 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/api/info", "dest": "/api/info.py" },
-    { "src": "/(.*)",     "dest": "/$1" }
+    { "src": "/api/info",          "dest": "/api/info.py" },
+    { "src": "/",                  "dest": "/index.html" },
+    { "src": "/style\\.css",       "dest": "/style.css" },
+    { "src": "/script\\.js(.*)",   "dest": "/script.js" },
+    { "src": "/(.*)",              "dest": "/$1" }
   ]
 }
